@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rosrtm-sbom"
+version = "0.1.0"
+description = "SBOM generator for ROS/OpenRTM nodes"
+authors = [
+  {name = "Noriaki Ando"}
+]
+requires-python = ">=3.10"
+
+[project.scripts]
+rosrtm_sbom = "rosrtm_sbom.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
