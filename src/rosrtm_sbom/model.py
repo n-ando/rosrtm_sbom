@@ -19,6 +19,9 @@ EvidenceKind = Literal[
     "elf_runpath",
     "elf_rpath",
     "python_import",
+    "python_metadata",
+    "dpkg",
+    "pip_metadata",
     "manual",
 ]
 
@@ -43,6 +46,11 @@ class Component:
     hashes: Dict[str, str] = field(default_factory=dict)
     properties: Dict[str, str] = field(default_factory=dict)
     evidence: List[Evidence] = field(default_factory=list)
+
+    # CycloneDX で使える補助メタデータ
+    author: Optional[str] = None
+    publisher: Optional[str] = None
+    description: Optional[str] = None
 
 
 @dataclass
@@ -79,6 +87,12 @@ class DependencyGraph:
             old.version = new.version
         if not old.purl and new.purl:
             old.purl = new.purl
+        if not old.author and new.author:
+            old.author = new.author
+        if not old.publisher and new.publisher:
+            old.publisher = new.publisher
+        if not old.description and new.description:
+            old.description = new.description
 
         old.licenses = sorted(set(old.licenses + new.licenses))
         for k, v in new.hashes.items():
@@ -88,4 +102,3 @@ class DependencyGraph:
             if k not in old.properties:
                 old.properties[k] = v
         old.evidence.extend(new.evidence)
-        

@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, timezone
 import json
-from pathlib import Path
 
 from ..config import ScanConfig
 from ..model import Component, DependencyGraph
@@ -19,6 +18,12 @@ def _component_to_cdx(c: Component) -> dict:
         item["version"] = c.version
     if c.purl:
         item["purl"] = c.purl
+    if c.author:
+        item["author"] = c.author
+    if c.publisher:
+        item["publisher"] = c.publisher
+    if c.description:
+        item["description"] = c.description
     if c.licenses:
         item["licenses"] = [{"license": {"name": x}} for x in c.licenses]
     if c.hashes:
@@ -30,38 +35,41 @@ def _component_to_cdx(c: Component) -> dict:
 
 def _dependencies_to_cdx(graph: DependencyGraph) -> list[dict]:
     depmap: dict[str, set[str]] = defaultdict(set)
+
     for e in graph.edges:
         depmap[e.src_ref].add(e.dst_ref)
 
     result: list[dict] = []
-    for src, dsts in sorted(depmap.items()):
+    for src in sorted(depmap.keys()):
         result.append({
             "ref": src,
-            "dependsOn": sorted(dsts),
+            "dependsOn": sorted(depmap[src]),
         })
+
     return result
 
 
 def _metadata(config: ScanConfig, primary: Component | None) -> dict:
-    tool = {
-        "vendor": "OpenAI prototype",
-        "name": "rosrtm-sbom",
-        "version": "0.1.0",
-    }
-
     md = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "tools": {"components": [tool]},
+        "tools": {
+            "components": [
+                {
+                    "type": "application",
+                    "name": "rosrtm-sbom",
+                    "version": "0.2.0",
+                }
+            ]
+        },
         "properties": [
             {"name": "scan.profile", "value": config.profile},
-            {"name": "scan.source", "value": str(config.source) if config.source else ""},
-            {"name": "scan.build", "value": str(config.build) if config.build else ""},
-            {"name": "scan.install", "value": str(config.install) if config.install else ""},
             {"name": "scan.target", "value": config.target or ""},
         ],
     }
+
     if primary is not None:
         md["component"] = _component_to_cdx(primary)
+
     return md
 
 
@@ -77,4 +85,3 @@ def write_cyclonedx_json(graph: DependencyGraph, config: ScanConfig, primary: Co
 
     config.output.parent.mkdir(parents=True, exist_ok=True)
     config.output.write_text(json.dumps(bom, indent=2, ensure_ascii=False), encoding="utf-8")
-    

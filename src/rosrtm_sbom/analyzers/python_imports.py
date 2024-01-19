@@ -40,6 +40,7 @@ def analyze_python_file(path: Path) -> tuple[Component, list[Component], list[De
 
     for mod in imports:
         dep_ref = f"python-module:{mod}"
+
         comp = Component(
             bom_ref=dep_ref,
             name=mod,
@@ -48,6 +49,7 @@ def analyze_python_file(path: Path) -> tuple[Component, list[Component], list[De
             evidence=[Evidence("python_import", str(path), {"module": mod})],
         )
         components.append(comp)
+
         edges.append(
             DependencyEdge(
                 src_ref=primary.bom_ref,
